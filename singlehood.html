@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Singapore's Baby Shortage</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <!-- D3 -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+<!-- Circle are black when hovered-->
+<style>
+  .axis-bottom .domain {
+    display: none;
+  }
+
+  .n {
+    opacity: .8;
+    font-size: 10px;
+    margin-left: 4px;
+    font-family: sans-serif;
+    color: white;
+    padding: 6px;
+    background-color: #3C3176;
+  }
+</style>
+<body>
+
+<div class="container text-center">
+    <h1>Lifestyle choice of staying single</h1>
+    <br>
+    <p>The main cause of declining fertility rates in Singapore is that more people are choosing to be single. There is a general trend
+    of increasing singlehood across all age groups over the years. There is a inverse relationship between singlehood rates and fertility rates,
+    so declining fertility rates are a direct result of increasing singlehood rates. The 25-29 Years age group has the greatest singlehood rates increase over the years -
+    almost 50% increase from 51.8% in 1990 to 75% in 2020. The most ideal child bearing years of a woman also belongs to this age group, which explains why
+    fertility rates are on a constant downward trend from 1990 to 2020.</p>
+    <br>
+    <!-- D3 Birthrate Graph -->
+    <div id="singlehood_graph"></div>
+    <br>
+    <ul class="pagination pagination-lg">
+      <li class="page-item">
+        <a class="page-link" href="fertilityrate.html" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+          <span class="sr-only">Previous</span>
+        </a>
+      </li>
+      <li><a href="index.html">1</a></li>
+      <li><a href="fertilityrate.html">2</a></li>
+      <li class="active"><a href="singlehood.html">3</a></li>
+      <li><a href="housing.html">4</a></li>
+      <li><a href="#">5</a></li>
+      <li class="page-item">
+      <a class="page-link" href="housing.html" aria-label="Next">
+        <span aria-hidden="true">&raquo;</span>
+        <span class="sr-only">Next</span>
+        </a>
+      </li>
+    </ul>
+</div>
+</body>
+<script>
+
+//Read the data
+async function init() {
+  var data = await d3.csv("data/singlehood_data.csv");
+
+  var keys = Object.keys(data[0]).slice(1);
+
+  var margin = {top: 20, right: 50, bottom: 50, left: 50};
+  var width = 700;
+  var height = 560;
+  var innerWidth = width - margin.left - margin.right;
+  var innerHeight = height - margin.top - margin.bottom;
+  var svg = d3.select("#singlehood_graph")
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+  var g = svg.append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+  var x0 = d3.scaleBand()
+    .rangeRound([0, innerWidth])
+    .paddingInner(.1);
+
+  var x1 = d3.scaleBand()
+    .padding(.05);
+
+  var y = d3.scaleLinear()
+    .rangeRound([innerHeight, 0]);
+
+  var z = d3.scaleOrdinal()
+    .range(["#003f5c", "#374c80", "#7a5195", "#bc5090", "#ef5675", "#ff764a", "#ffa600"]);
+
+    x0.domain(data.map(d => d["Selected Age Group"]));
+    x1.domain(keys).rangeRound([0, x0.bandwidth()]);
+    y.domain([0, d3.max(data, d => d3.max(keys, key=> d[key]))]).nice();
+
+  // create a tooltip
+  var Tooltip = d3.select("#singlehood_graph")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "2px")
+    .style("border-radius", "5px")
+    .style("padding", "5px")
+
+  // Three function that change the tooltip when user hover / move / leave a cell
+  var mouseover = function(d) {
+    Tooltip
+      .style("opacity", 1)
+  }
+
+  var mousemove = function(d) {
+    Tooltip
+      .html(d.value)
+      .style("left", (d3.event.pageX+10) + "px")
+      .style("top", (d3.event.pageY-50) + "px")
+  }
+  var mouseleave = function(d) {
+    Tooltip
+      .style("opacity", 0)
+  }
+
+  g.append("g")
+    .selectAll("g")
+    .data(data)
+    .enter()
+    .append("g")
+    .attr("transform", d => "translate(" + x0(d["Selected Age Group"]) + ",0)")
+    .selectAll("rect")
+    .data(d => keys.map(key => {return {key: key, value: d[key]}}))
+    .enter().append("rect")
+    .attr("x", d => x1(d.key))
+    .attr("y", d => y(d.value))
+    .attr("width", x1.bandwidth())
+    .attr("height", d => innerHeight - y(d.value))
+    .attr("fill", d =>  z(d.key))
+    .on("mouseover", mouseover)
+    .on("mousemove", mousemove)
+    .on("mouseleave", mouseleave)
+
+  g.append("g")
+    .attr("class", "axis-bottom")
+    .attr("transform", "translate(0," + innerHeight + ")")
+    .call(d3.axisBottom(x0));
+
+  g.append("g")
+    .attr("class", "axis-left")
+    .call(d3.axisLeft(y).ticks(null, "s"))
+    .append("text")
+    .attr("x", 10)
+    .attr("y", y(y.ticks().pop()) + 10)
+    .attr("dy", "0.32em")
+    .attr("fill", "#000")
+    .style("transform", "rotate(-90deg)")
+    .attr("font-weight", "bold")
+    .attr("text-anchor", "end")
+
+  var legend = g.append("g")
+     .attr("font-family", "sans-serif")
+     .attr("font-size", 10)
+     .attr("text-anchor", "end")
+     .selectAll("g")
+     .data(keys.slice().reverse())
+     .enter().append("g")
+     .attr("transform", (d, i) => "translate(0," + i * 20 + ")");
+
+  legend.append("rect")
+    .attr("x", innerWidth - 19)
+    .attr("width", 10)
+    .attr("height", 10)
+    .attr("fill", z);
+
+  legend.append("text")
+    .attr("x", innerWidth - 32)
+    .attr("y", 6)
+    .attr("dy", "0.32em")
+    .text(d => d);
+
+  //Add x and y axis labels
+  svg.append("text")
+    .attr("x", -265)
+    .attr("y", 10)
+    .attr("transform", "rotate(-90)")
+    .attr("text-anchor", "middle")
+    .text("Percentage (%)");
+
+  svg.append("text")
+    .attr("x", 350)
+    .attr("y", 550)
+    .attr("text-anchor", "middle")
+    .text("Selected Age Group (Years)");
+
+  // Child bearing years annotation
+  svg.append("line")
+    .attr("x1", 153)
+    .attr("y1", 130)
+    .attr("x2", 241)
+    .attr("y2", 130)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
+
+  svg.append("line")
+    .attr("x1", 153)
+    .attr("y1", 130)
+    .attr("x2", 153)
+    .attr("y2", 136)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
+
+  svg.append("line")
+    .attr("x1", 241)
+    .attr("y1", 130)
+    .attr("x2", 241)
+    .attr("y2", 136)
+    .attr("stroke-width", 1)
+    .attr("stroke", "black");
+
+  svg.append("text")
+    .attr("x", 200)
+    .attr("y", 105)
+    .attr("text-anchor", "middle")
+    .attr("font-size","11px")
+    .html("Ideal Childbearing");
+
+  svg.append("text")
+    .attr("x", 200)
+    .attr("y", 120)
+    .attr("text-anchor", "middle")
+    .attr("font-size","11px")
+    .html("Age Group");
+}
+
+init()
+
+</script>
+</html>
