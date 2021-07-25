@@ -151,7 +151,7 @@ async function init() {
   var mousemove = function(d) {
     Tooltip
       .html("Index Value: " + d.value + "<br>" + "Year: " +  d.year)
-      .style("left", (d3.event.pageX-140) + "px")
+      .style("left", (d3.event.pageX+80) + "px")
       .style("top", (d3.event.pageY-70) + "px")
   }
   var mouseleave = function(d) {
