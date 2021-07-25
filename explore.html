@@ -12,6 +12,7 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
     <!-- D3 -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
 </head>
 <!-- Circle are black when hovered-->
 <style>
@@ -22,30 +23,29 @@
 <body>
 
 <div class="container text-center">
-    <h1>Fertility rate hits an all time low</h1>
+    <h1>Explore fertility rates!</h1>
     <br>
-    <p>The connected scatterplot below shows Singapore's fertility rate from 1960 to 2020. There is an obvious downward trend over the years. In 1972, the Singapore government started a Stop-at-Two campaign to
-    encourage a two-child family norm by legalizing abortion, imposing significant disincentives for families who chose to have more than two children, and offered rewards to Singaporeans who underwent voluntary sterilization.
-    It was a very effective campaign as fertility rates fell steeply right after. In 1986, the Singapore Government recognised that falling fertility rates were a serious problem, and started the Have-Three-or-More campaign.
-    It had some success in boosting fertility rates for the following two years, but the downward trend continued right after that. Since then, Singapore's fertility rate has not yet been restored to replacement level of 2.1,
-    and it has reached an all time low of 1.1 in 2020. There were some significant upticks in fertility rates for "Years of the Dragon" (1988, 2000 and 2012), which are auspicious years to conceive a baby in the Chinese culture.</p>
+    <p>Many countries are facing the same problem of declining fertility rates. Here you can explore the fertility rates trend from 1960 to 2019 for
+    different countries all over the world, and compare them with Singapore's.</p>
     <br>
-    <div id="birthrate_graph"></div>
+    <select id="selectButton"></select>
+    <br>
+    <div id="explore_graph"></div>
     <br>
     <ul class="pagination pagination-lg">
       <li class="page-item">
-        <a class="page-link" href="index.html" aria-label="Previous">
+        <a class="page-link" href="housing.html" aria-label="Previous">
           <span aria-hidden="true">&laquo;</span>
           <span class="sr-only">Previous</span>
         </a>
       </li>
       <li><a href="index.html">1</a></li>
-      <li class="active"><a href="fertilityrate.html">2</a></li>
+      <li><a href="fertilityrate.html">2</a></li>
       <li><a href="singlehood.html">3</a></li>
       <li><a href="housing.html">4</a></li>
-      <li><a href="explore.html">5</a></li>
-      <li class="page-item">
-        <a class="page-link" href="singlehood.html" aria-label="Next">
+      <li class="active"><a href="explore.html">5</a></li>
+      <li class="page-item disabled">
+        <a class="page-link" aria-label="Next">
           <span aria-hidden="true">&raquo;</span>
           <span class="sr-only">Next</span>
         </a>
@@ -56,11 +56,11 @@
 <script>
 // set the dimensions and margins of the graph
 var margin = {top: 20, right: 50, bottom: 50, left: 50},
-    width = 600 - margin.left - margin.right,
+    width = 800 - margin.left - margin.right,
     height = 560 - margin.top - margin.bottom;
 
 // append the svg object to the body of the page
-var svg = d3.select("#birthrate_graph")
+var svg = d3.select("#explore_graph")
   .append("svg")
   .attr("width", width + margin.left + margin.right)
   .attr("height", height + margin.top + margin.bottom)
@@ -69,7 +69,18 @@ var svg = d3.select("#birthrate_graph")
 
 //Read the data
 async function init() {
-  var data = await d3.csv("data/singapore_fertility_rate.csv");
+  var data = await d3.csv("data/fertility_rate_all.csv");
+
+  var allGroup = d3.map(data, function(d){return(d.Country)}).keys()
+
+  // add the options to the button
+  d3.select("#selectButton")
+    .selectAll('myOptions')
+    .data(allGroup)
+    .enter()
+    .append('option')
+    .text(function (d) { return d; }) // text showed in the menu
+    .attr("value", function (d) { return d; }) // corresponding value returned by
 
   var x = d3.scaleLinear()
     .domain(d3.extent(data, function(d) { return d.Year; }))
@@ -80,14 +91,14 @@ async function init() {
 
   // Add Y axis
   var y = d3.scaleLinear()
-    .domain( [0, 6])
+    .domain( [0, 10])
     .range([ height, 0 ]);
   svg.append("g")
     .call(d3.axisLeft(y));
 
   // Add the line
-  svg.append("path")
-    .datum(data)
+  var line = svg.append("path")
+    .datum(data.filter(function(d){return d.Country==allGroup[0]}))
     .attr("fill", "none")
     .attr("stroke", "black")
     .attr("stroke-width", 1.5)
@@ -97,7 +108,7 @@ async function init() {
       )
 
   // create a tooltip
-  var Tooltip = d3.select("#birthrate_graph")
+  var Tooltip = d3.select("#explore_graph")
     .append("div")
     .style("opacity", 0)
     .attr("class", "tooltip")
@@ -124,94 +135,6 @@ async function init() {
         .style("opacity", 0)
     }
 
-  // Have-Three-or-More Campaign
-  svg.append("line")
-    .attr("x1", 216)
-    .attr("y1", 367)
-    .attr("x2", 205)
-    .attr("y2", 270)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("text")
-    .attr("x", 200)
-    .attr("y", 240)
-    .attr("text-anchor", "middle")
-    .html("Have-Three-or-More");
-
-  svg.append("text")
-    .attr("x", 200)
-    .attr("y", 260)
-    .attr("text-anchor", "middle")
-    .html("Campaign (1986)");
-
-  // Stop-at-Two Campaign
-  svg.append("line")
-    .attr("x1", 102)
-    .attr("y1", 234)
-    .attr("x2", 124)
-    .attr("y2", 170)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("text")
-    .attr("x", 160)
-    .attr("y", 160)
-    .attr("text-anchor", "middle")
-    .html("Stop-at-Two Campaign (1972)");
-
-  // Dragon Years
-  svg.append("line")
-    .attr("x1", 240)
-    .attr("y1", 327)
-    .attr("x2", 322)
-    .attr("y2", 295)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("line")
-    .attr("x1", 335)
-    .attr("y1", 353)
-    .attr("x2", 350)
-    .attr("y2", 295)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("line")
-    .attr("x1", 430)
-    .attr("y1", 377)
-    .attr("x2", 385)
-    .attr("y2", 295)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("text")
-    .attr("x", 355)
-    .attr("y", 265)
-    .attr("text-anchor", "middle")
-    .html("Years of the Dragon");
-
-  svg.append("text")
-    .attr("x", 355)
-    .attr("y", 285)
-    .attr("text-anchor", "middle")
-    .html("(1988, 2000, 2012)");
-
-  // All Time low
-  svg.append("line")
-    .attr("x1", 500)
-    .attr("y1", 393)
-    .attr("x2", 500)
-    .attr("y2", 310)
-    .attr("stroke-width", 1)
-    .attr("stroke", "black");
-
-  svg.append("text")
-    .attr("x", 500)
-    .attr("y", 300)
-    .attr("text-anchor", "middle")
-    .html("All Time Low");
-
   //Add x and y axis labels
   svg.append("text")
     .attr("x", -235)
@@ -221,15 +144,15 @@ async function init() {
     .text("Fertility Rate");
 
   svg.append("text")
-    .attr("x", 250)
+    .attr("x", 355)
     .attr("y", 530)
     .attr("text-anchor", "middle")
     .text("Year");
 
   // Add the points
-  svg.append("g")
+  var dot = svg.append("g")
     .selectAll("dot")
-    .data(data)
+    .data(data.filter(function(d){return d.Country==allGroup[0]}))
     .enter()
     .append("circle")
       .attr("class", "myCircle")
@@ -242,6 +165,32 @@ async function init() {
       .on("mouseover", mouseover)
       .on("mousemove", mousemove)
       .on("mouseleave", mouseleave)
+
+  function update(selectedGroup) {
+    var dataFilter = data.filter(function(d){return d.Country==selectedGroup})
+
+    line
+        .datum(dataFilter)
+        .transition()
+        .duration(1000)
+        .attr("d", d3.line()
+          .x(function(d) { return x(d.Year) })
+          .y(function(d) { return y(d.Fertility) })
+        )
+
+    dot
+        .data(dataFilter)
+        .transition()
+        .duration(1000)
+        .attr("cx", function(d) { return x(d.Year) } )
+        .attr("cy", function(d) { return y(d.Fertility) } )
+  }
+
+  // When the button is changed, run the updateChart function
+  d3.select("#selectButton").on("change", function(d) {
+      var selectedOption = d3.select(this).property("value")
+      update(selectedOption)
+  })
 }
 
 init()
